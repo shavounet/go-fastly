@@ -243,6 +243,15 @@ type EnableWAFInput struct {
 	ID string
 }
 
+type EnableWAFRequestBody struct {
+	Data struct {
+		Type       string `json:type`
+		Attributes struct {
+			Disabled bool
+		} `json:attributes`
+	} `json:data`
+}
+
 // EnableWAF enables a specific WAF.
 func (c *Client) EnableWAF(i *EnableWAFInput) (*WAF, error) {
 
@@ -250,7 +259,13 @@ func (c *Client) EnableWAF(i *EnableWAFInput) (*WAF, error) {
 		return nil, ErrMissingWAFID
 	}
 
-	path := fmt.Sprintf("/waf/firewalls/%s/enable", i.ID)
+	body := EnableWAFRequestBody{
+		Data: {
+			Type: "waf_firewall",
+		},
+	}
+
+	path := fmt.Sprintf("/waf/firewalls/%s", i.ID)
 	resp, err := c.PatchJSONAPI(path, nil, nil)
 	if err != nil {
 		return nil, err
