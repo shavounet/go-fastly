@@ -180,6 +180,35 @@ func (c *Client) GetStatsJSON(i *GetStatsInput, dst any) error {
 	return json.NewDecoder(resp.Body).Decode(dst)
 }
 
+// GetAggregateJSON returns all service usage information aggregated using JSON format
+func (c *Client) GetAggregateJSON(i *GetUsageInput, dst any) error {
+	p := "/stats/aggregate"
+
+	ro := &RequestOptions{
+		Params: map[string]string{},
+	}
+	if i.By != nil {
+		ro.Params["by"] = *i.By
+	}
+	if i.From != nil {
+		ro.Params["from"] = *i.From
+	}
+	if i.Region != nil {
+		ro.Params["region"] = *i.Region
+	}
+	if i.To != nil {
+		ro.Params["to"] = *i.To
+	}
+
+	resp, err := c.Get(p, ro)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return json.NewDecoder(resp.Body).Decode(dst)
+}
+
 // Usage represents usage data of a single service or region.
 type Usage struct {
 	Bandwidth       *uint64 `mapstructure:"bandwidth"`
@@ -277,6 +306,38 @@ func (c *Client) GetUsageByService(i *GetUsageInput) (*UsageByServiceResponse, e
 	}
 
 	resp, err := c.Get("/stats/usage_by_service", ro)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var sr *UsageByServiceResponse
+	if err := decodeBodyMap(resp.Body, &sr); err != nil {
+		return nil, err
+	}
+
+	return sr, nil
+}
+
+// GetAggregate returns all service usage information aggregated
+func (c *Client) GetAggregate(i *GetUsageInput) (*UsageByServiceResponse, error) {
+	ro := &RequestOptions{
+		Params: map[string]string{},
+	}
+	if i.By != nil {
+		ro.Params["by"] = *i.By
+	}
+	if i.From != nil {
+		ro.Params["from"] = *i.From
+	}
+	if i.Region != nil {
+		ro.Params["region"] = *i.Region
+	}
+	if i.To != nil {
+		ro.Params["to"] = *i.To
+	}
+
+	resp, err := c.Get("/stats/aggregate", ro)
 	if err != nil {
 		return nil, err
 	}
